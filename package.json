@@ -24,7 +24,6 @@
     ],
     "scripts": {
         "lint": "shellcheck source/*",
-        "test": "npm run lint",
         "test:image": "./source/main --duration 5 --effect slide-left --ease in-out-sine --image test/test-image.jpg --video test/test-video.mp4 -q --width 1080 --height 1920"
     }
 }
