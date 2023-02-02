@@ -1,0 +1,4 @@
+enable=avoid-nullary-conditions
+external-sources=true
+shell=sh
+source-path=source
