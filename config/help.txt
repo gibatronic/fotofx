@@ -1,0 +1,54 @@
+{{name}}:
+  {{description}}
+  Depends on the ffmpeg tool, get it at: ffmpeg.org
+
+Usage:
+  {{name}} -h | --help
+  {{name}} -v | --version
+  {{name}} --duration <duration> --effect <effect> [--ease <ease>] [--fps <fps>] --image <image> --video <video> [-q | --quiet] --width <width> --height <height>
+
+Options:
+  --duration <duration>
+    Effect length, in seconds
+
+  --effect <effect>
+    Effect type, check the list below
+
+ [--ease <ease>]
+    Easing function, check the list below
+    "linear" by default
+
+ [--fps <fps>]
+    Amount of frames per second
+    60 by default, smooth
+
+   -h, --help
+    Show this help message.
+
+  --image <image>
+    The input image to animate
+
+  --video <video>
+    The output animated video
+
+   -v, --version
+    Get the version number.
+
+ [--quiet]
+    Only show errors
+
+  --width <width>
+    Video width in pixels
+
+  --height <height>
+    Video height in pixels
+
+Effects:
+{{effects}}
+
+Easings:
+{{easings}}
+
+Example:
+  Create a short vertical video for social media of `photo.jpg` sliding to the left:
+    {{name}} --duration 15 --effect slide-left --image photo.jpg --video photofx.mp4 --width 1080 --height 1920

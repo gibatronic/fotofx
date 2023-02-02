@@ -1,0 +1,6 @@
+slide-top       overlay=x='0':y='0'
+slide-right     overlay=x='0':y='0'
+slide-bottom    overlay=x='0':y='0'
+slide-left      overlay=x='(W - w) * (%s)':y='(H - h) / 2'
+zoom-in         zoompan=x='0':y='0':zoom='1'
+zoom-out        zoompan=x='0':y='0':zoom='1'

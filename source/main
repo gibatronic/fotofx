@@ -1,0 +1,207 @@
+#!/bin/sh
+
+set -e
+
+SOURCE=$(
+    depth=0
+    self=$0
+
+    while [ -L "$self" ] && [ "$depth" -lt 10 ]; do
+        depth=$((depth + 1))
+        self=$(readlink -f "$self")
+    done
+
+    if [ "$depth" = 10 ]; then
+        echo 'Error: unable to resolve source path' 1>&2
+        exit 1
+    fi
+
+    dirname "$self"
+)
+
+ROOT=$(realpath "$SOURCE/..")
+CONFIG="$ROOT/config"
+
+. "$SOURCE/easings.sh"
+. "$SOURCE/effects.sh"
+. "$SOURCE/log.sh"
+. "$SOURCE/utility.sh"
+. "$SOURCE/validate.sh"
+
+generate() {
+    if ! command -v ffmpeg > /dev/null 2>&1; then
+        error 'missing ffmpeg tool, get it at ffmpeg.org'
+        return 1;
+    fi
+
+    duration=$1
+    behavior=$2
+    easing_function=$3
+    fps=$4
+    image=$5
+    video=$6
+    quiet=$7
+    width=$8
+    height=$9
+
+    base=$(printf 'color=black:d=%d:r=%d:s=%dx%d' "$duration" "$fps" "$width" "$height")
+    log_level=info
+
+    if [ "$quiet" = 1 ]; then
+        log_level=error
+    fi
+
+    # shellcheck disable=SC2059
+    parsed_easing_function=$(printf -- "$easing_function" "$duration")
+
+    # shellcheck disable=SC2059
+    filter=$(printf -- "$behavior" "$parsed_easing_function")
+
+    ffmpeg \
+        -hide_banner \
+        -loglevel "$log_level" \
+        -f lavfi -i "$base" \
+        -i "$image" \
+        -filter_complex "$filter" \
+        -y \
+        "$video"
+}
+
+help() {
+    effect_list=$(effect_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
+    easing_list=$(easing_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
+
+    variable_name=$(printf 's/{{name}}/%s/' "$(get_package_field 'name')")
+    variable_description=$(printf 's/{{description}}/%s/' "$(get_package_field 'description')")
+    variable_effects=$(printf 's/{{effects}}/%s/' "${effect_list%%\\n}")
+    variable_easings=$(printf 's/{{easings}}/%s/' "${easing_list%%\\n}")
+
+    printf '\n'
+
+    sed "$variable_name" < "$CONFIG/help.txt" |
+    sed "$variable_description" |
+    sed "$variable_effects" |
+    sed "$variable_easings" |
+    while IFS= read -r line; do
+        printf '%2s%s\n' ' ' "$line"
+    done
+
+    printf '\n'
+}
+
+version() {
+    get_package_field 'version'
+}
+
+main() {
+    if [ $# = 0 ]; then
+        help
+        return 1;
+    fi
+
+    duration=
+    effect_name=
+    effect_behavior=
+    easing_name=linear
+    easing_function=
+    fps=60
+    image=
+    video=
+    quiet=0
+    width=
+    height=
+
+    option_index=1
+    option_name=
+    option_value=
+
+    while [ "$option_index" -le $# ]; do
+        option=$(get_word $option_index "$@")
+
+        if echo "$option" | grep -q '='; then
+            # option is in the '--name=value' format
+            option_name=${option%%=*}
+            option_value=${option##*=}
+        else
+            # option is in the '--name' 'value' format
+            # so the value is in the next argument
+            option_name=$option
+
+            # the quiet option doesn't have any value
+            if [ "$option_name" != '-q' ] && [ "$option_name" != '--quiet' ]; then
+                option_index=$((option_index + 1))
+                option_value=$(get_word $option_index "$@")
+            fi
+        fi
+
+        case "$option_name" in
+            -h|--help)
+                help
+                return 0
+                ;;
+            -v|--version)
+                version
+                return 0
+                ;;
+            -q|--quiet)
+                quiet=1
+                ;;
+            --duration)
+                duration=$option_value
+                ;;
+            --effect)
+                effect_name=$option_value
+                ;;
+            --ease)
+                easing_name=$option_value
+                ;;
+            --fps)
+                fps=$option_value
+                ;;
+            --image)
+                image=$option_value
+                ;;
+            --video)
+                video=$option_value
+                ;;
+            --width)
+                width=$option_value
+                ;;
+            --height)
+                height=$option_value
+                ;;
+            *)
+                error 'unkown option "%s"' "$option_name"
+                return 1
+                ;;
+        esac
+
+        option_index=$((option_index + 1))
+    done
+
+    validate_numeric 'duration' "$duration"
+    validate_enum 'effect' "$effect_name" "$(effect_names)"
+    validate_enum 'ease' "$easing_name" "$(easing_names)"
+    validate_numeric 'fps' "$fps"
+    validate_required "$image" "$image"
+    validate_required "$video" "$video"
+    validate_numeric 'width' "$width"
+    validate_numeric 'height' "$height"
+
+    effect_behavior=$(get_effect_behavior "$effect_name")
+    easing_function=$(get_easing_function "$easing_name")
+
+    generate \
+        "$duration" \
+        "$effect_behavior" \
+        "$easing_function" \
+        "$fps" \
+        "$image" \
+        "$video" \
+        "$quiet" \
+        "$width" \
+        "$height"
+}
+
+main "$@"
+exit $?
