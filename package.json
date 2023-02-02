@@ -1,6 +1,6 @@
 {
     "name": "fotofx",
-    "description": "Create a video using effects to animate still images with ffmpeg",
+    "description": "Create videos using effects to animate still images with ffmpeg",
     "author": "Gibran Malheiros <gibatronic@gmail.com>",
     "license": "MIT",
     "version": "0.1.0",
