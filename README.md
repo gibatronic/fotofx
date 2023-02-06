@@ -13,7 +13,6 @@ fotofx \
     --ease in-out-sine \
     --image photo.jpg \
     --video photofx.mp4 \
-    --quiet \
     --width 1080 \
     --height 1920
 ```

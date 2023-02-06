@@ -183,8 +183,8 @@ main() {
     validate_enum 'effect' "$effect_name" "$(effect_names)"
     validate_enum 'ease' "$easing_name" "$(easing_names)"
     validate_numeric 'fps' "$fps"
-    validate_required "$image" "$image"
-    validate_required "$video" "$video"
+    validate_required 'image' "$image"
+    validate_required 'video' "$video"
     validate_numeric 'width' "$width"
     validate_numeric 'height' "$height"
 
@@ -204,4 +204,3 @@ main() {
 }
 
 main "$@"
-exit $?
