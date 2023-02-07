@@ -34,15 +34,16 @@ generate() {
         return 1;
     fi
 
-    duration=$1
-    behavior=$2
-    easing_function=$3
-    fps=$4
-    image=$5
-    video=$6
-    quiet=$7
-    width=$8
-    height=$9
+    debug=$1
+    duration=$2
+    behavior=$3
+    easing_function=$4
+    fps=$5
+    image=$6
+    video=$7
+    quiet=$8
+    width=$9
+    height=${10}
 
     base=$(printf 'color=black:d=%d:r=%d:s=%dx%d' "$duration" "$fps" "$width" "$height")
     log_level=info
@@ -56,6 +57,11 @@ generate() {
 
     # shellcheck disable=SC2059
     filter=$(printf -- "$behavior" "$parsed_easing_function")
+
+    if [ "$debug" = 1 ]; then
+        # show the frame number and time
+        filter=$(printf "%s,drawtext=x=40:y=40:text='FRAME %%{frame_num}\n TIME %%{pts}':font=monospace:fontsize=40:fontcolor=#ECF0F1:line_spacing=20" "$filter")
+    fi
 
     ffmpeg \
         -hide_banner \
@@ -99,6 +105,7 @@ main() {
         return 1;
     fi
 
+    debug=0
     duration=
     effect_name=
     effect_behavior=
@@ -127,8 +134,10 @@ main() {
             # so the value is in the next argument
             option_name=$option
 
-            # the quiet option doesn't have any value
-            if [ "$option_name" != '-q' ] && [ "$option_name" != '--quiet' ]; then
+            # boolean options don't have any value
+            if [ "$option_name" != '--debug' ] &&
+               [ "$option_name" != '-q' ] &&
+               [ "$option_name" != '--quiet' ]; then
                 option_index=$((option_index + 1))
                 option_value=$(get_word $option_index "$@")
             fi
@@ -143,8 +152,8 @@ main() {
                 version
                 return 0
                 ;;
-            -q|--quiet)
-                quiet=1
+            --debug)
+                debug=1
                 ;;
             --duration)
                 duration=$option_value
@@ -163,6 +172,9 @@ main() {
                 ;;
             --video)
                 video=$option_value
+                ;;
+            -q|--quiet)
+                quiet=1
                 ;;
             --width)
                 width=$option_value
@@ -192,6 +204,7 @@ main() {
     easing_function=$(get_easing_function "$easing_name")
 
     generate \
+        "$debug" \
         "$duration" \
         "$effect_behavior" \
         "$easing_function" \

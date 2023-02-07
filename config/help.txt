@@ -5,9 +5,12 @@
 Usage:
   {{name}} -h | --help
   {{name}} -v | --version
-  {{name}} --duration <duration> --effect <effect> [--ease <ease>] [--fps <fps>] --image <image> --video <video> [-q | --quiet] --width <width> --height <height>
+  {{name}} [--debug] --duration <duration> --effect <effect> [--ease <ease>] [--fps <fps>] --image <image> --video <video> [-q | --quiet] --width <width> --height <height>
 
 Options:
+  --debug
+    Show the frame number and timestamp in the video
+
   --duration <duration>
     Effect length, in seconds
 
