@@ -1,2 +1,2 @@
 linear       t/%d
-in-out-sine  -(cos(PI * (t / %d)) - 1) / 2'
+in-out-sine  -(cos(PI * (t / %d)) - 1) / 2
