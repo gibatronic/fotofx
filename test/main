@@ -1,0 +1,60 @@
+#!/bin/sh
+
+set -e
+
+TEST=$(
+    depth=0
+    self=$0
+
+    while [ -L "$self" ] && [ "$depth" -lt 10 ]; do
+        depth=$((depth + 1))
+        self=$(readlink -f "$self")
+    done
+
+    if [ "$depth" = 10 ]; then
+        echo 'Error: unable to resolve test path' 1>&2
+        exit 1
+    fi
+
+    dirname "$self"
+)
+
+ROOT=$(realpath "$TEST/..")
+CONFIG="$ROOT/config"
+SOURCE="$ROOT/source"
+VIDEOS="$TEST/videos"
+
+. "$SOURCE/effects.sh"
+. "$SOURCE/log.sh"
+. "$SOURCE/utility.sh"
+. "$SOURCE/validate.sh"
+
+generate() {
+    effect_name=$1
+
+    "$SOURCE/main" \
+        --debug \
+        --duration 5 \
+        --effect "$effect_name" \
+        --image "$TEST/test-image.jpg" \
+        --video "$VIDEOS/$effect_name.mp4" \
+        --quiet \
+        --width 1080 \
+        --height 1920 &&
+        icon='✔' ||
+        icon='✖'
+
+    log '%s %s' "$icon" "$effect_name"
+}
+
+main() {
+    mkdir -p "$VIDEOS"
+
+    for effect_name in $(effect_names); do
+        generate "$effect_name" &
+    done
+
+    wait
+}
+
+main
