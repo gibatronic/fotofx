@@ -1,2 +1,2 @@
-linear       t/%d
-in-out-sine  -(cos(PI * (t / %d)) - 1) / 2
+linear       (n - 1) / %d
+in-out-sine  -(cos(PI * ((n - 1) / %d)) - 1) / 2

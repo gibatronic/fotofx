@@ -46,6 +46,7 @@ generate() {
     height=${10}
 
     base=$(printf 'color=black:d=%d:r=%d:s=%dx%d' "$duration" "$fps" "$width" "$height")
+    frames=$(((duration * fps) - 1))
     log_level=info
 
     if [ "$quiet" = 1 ]; then
@@ -53,14 +54,15 @@ generate() {
     fi
 
     # shellcheck disable=SC2059
-    parsed_easing_function=$(printf -- "$easing_function" "$duration")
+    parsed_easing_function=$(printf -- "$easing_function" "$frames")
 
     # shellcheck disable=SC2059
     filter=$(printf -- "$behavior" "$parsed_easing_function")
 
     if [ "$debug" = 1 ]; then
-        # show the frame number and time
-        filter=$(printf "%s,drawtext=x=40:y=40:text='FRAME %%{frame_num}\n TIME %%{pts}':font=monospace:fontsize=40:fontcolor=#ECF0F1:line_spacing=20" "$filter")
+        # show frame and time information
+        digits=$(printf '%d' "$frames" | wc -c | tr -d ' ')
+        filter=$(printf "%s,drawtext=x=40:y=40:text='FRAME %%{expr_int_format\:n\:d\:%d} / %d\n TIME %%{pts}':font=monospace:fontsize=40:fontcolor=#ECF0F1:line_spacing=20" "$filter" "$digits" "$frames")
     fi
 
     ffmpeg \
