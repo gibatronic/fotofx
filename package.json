@@ -3,7 +3,7 @@
     "description": "Create videos using effects to animate still images with ffmpeg",
     "author": "Gibran Malheiros <gibatronic@gmail.com>",
     "license": "MIT",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "bin": "./source/main",
     "devDependencies": {
         "shellcheck": "^1.1.0"
