@@ -1,0 +1,4 @@
+EFFECT {{effect_name}}
+  EASE {{easing_name}}
+ FRAME %{expr_int_format:n:d:{{digits}}} / {{frames}}
+  TIME %{pts}

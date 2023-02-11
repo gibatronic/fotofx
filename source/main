@@ -36,14 +36,16 @@ generate() {
 
     debug=$1
     duration=$2
-    behavior=$3
-    easing_function=$4
-    fps=$5
-    image=$6
-    video=$7
-    quiet=$8
-    width=$9
-    height=${10}
+    effect_name=$3
+    effect_behavior=$4
+    easing_name=$5
+    easing_function=$6
+    fps=$7
+    image=$8
+    video=$9
+    quiet=${10}
+    width=${11}
+    height=${12}
 
     base=$(printf 'color=black:d=%d:r=%d:s=%dx%d' "$duration" "$fps" "$width" "$height")
     frames=$(((duration * fps) - 1))
@@ -57,12 +59,26 @@ generate() {
     parsed_easing_function=$(printf -- "$easing_function" "$frames")
 
     # shellcheck disable=SC2059
-    filter=$(printf -- "$behavior" "$parsed_easing_function")
+    filter=$(printf -- "$effect_behavior" "$parsed_easing_function")
 
     if [ "$debug" = 1 ]; then
-        # show frame and time information
         digits=$(printf '%d' "$frames" | wc -c | tr -d ' ')
-        filter=$(printf "%s,drawtext=x=40:y=40:text='FRAME %%{expr_int_format\:n\:d\:%d} / %d\n TIME %%{pts}':font=monospace:fontsize=40:fontcolor=#ECF0F1:line_spacing=20" "$filter" "$digits" "$frames")
+
+        variable_digits=$(printf 's/{{digits}}/%s/g' "$digits")
+        variable_easing_name=$(printf 's/{{easing_name}}/%s/g' "$easing_name")
+        variable_effect_name=$(printf 's/{{effect_name}}/%s/g' "$effect_name")
+        variable_frames=$(printf 's/{{frames}}/%s/g' "$frames")
+
+        debug_text=$(
+            sed "$variable_digits" < "$CONFIG/debug.txt" |
+            sed "$variable_easing_name" |
+            sed "$variable_effect_name" |
+            sed "$variable_frames" |
+            sed 's/:/\\:/g'
+        )
+
+        # show frame and time information in the video
+        filter=$(printf "%s,drawtext=x=40:y=40:font=monospace:fontcolor=#ECF0F1:fontsize=40:line_spacing=20:text='%s'" "$filter" "$debug_text")
     fi
 
     ffmpeg \
@@ -79,10 +95,10 @@ help() {
     effect_list=$(effect_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
     easing_list=$(easing_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
 
-    variable_name=$(printf 's/{{name}}/%s/' "$(get_package_field 'name')")
-    variable_description=$(printf 's/{{description}}/%s/' "$(get_package_field 'description')")
-    variable_effects=$(printf 's/{{effects}}/%s/' "${effect_list%%\\n}")
-    variable_easings=$(printf 's/{{easings}}/%s/' "${easing_list%%\\n}")
+    variable_name=$(printf 's/{{name}}/%s/g' "$(get_package_field 'name')")
+    variable_description=$(printf 's/{{description}}/%s/g' "$(get_package_field 'description')")
+    variable_effects=$(printf 's/{{effects}}/%s/g' "${effect_list%%\\n}")
+    variable_easings=$(printf 's/{{easings}}/%s/g' "${easing_list%%\\n}")
 
     printf '\n'
 
@@ -208,7 +224,9 @@ main() {
     generate \
         "$debug" \
         "$duration" \
+        "$effect_name" \
         "$effect_behavior" \
+        "$easing_name" \
         "$easing_function" \
         "$fps" \
         "$image" \
