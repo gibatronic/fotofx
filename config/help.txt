@@ -5,33 +5,35 @@
 Usage:
   {{name}} -h | --help
   {{name}} -v | --version
-  {{name}} [--debug] --duration <duration> --effect <effect> [--ease <ease>] [--fps <fps>] --image <image> --video <video> [-q | --quiet] --width <width> --height <height>
+  {{name}} [--debug] --duration <int> --effect <enum> [--ease <enum>] [--fps <int>] --image <path> --video <path> [-q | --quiet] --width <int> --height <int>
+  {{name}} [--debug] --duration <int> --effect 'zoom-in' --zoom <float> [--fps <int>] --image <path> --video <path> [-q | --quiet] --width <int> --height <int>
+  {{name}} [--debug] --duration <int> --effect 'zoom-out' --zoom <float> [--fps <int>] --image <path> --video <path> [-q | --quiet] --width <int> --height <int>
 
 Options:
   --debug
     Show the frame number and timestamp in the video
 
-  --duration <duration>
+  --duration <int>
     Effect length, in seconds
 
-  --effect <effect>
+  --effect <enum>
     Effect type, check the list below
 
- [--ease <ease>]
+ [--ease <enum>]
     Easing function, check the list below
-    "linear" by default
+    "linear" by default and for "zoom-in" and "zoom-out" effects the only easing available
 
- [--fps <fps>]
+ [--fps <int>]
     Amount of frames per second
     60 by default, smooth
 
    -h, --help
     Show this help message.
 
-  --image <image>
+  --image <path>
     The input image to animate
 
-  --video <video>
+  --video <path>
     The output animated video
 
    -v, --version
@@ -40,11 +42,14 @@ Options:
  [--quiet]
     Only show errors
 
-  --width <width>
+  --width <int>
     Video width in pixels
 
-  --height <height>
+  --height <int>
     Video height in pixels
+
+  --zoom <float>
+    Target for the "zoom-in" and "zoom-out" effects
 
 Effects:
 {{effects}}

@@ -46,28 +46,65 @@ generate() {
     quiet=${10}
     width=${11}
     height=${12}
+    zoom=${13}
 
     base=$(printf 'color=black:d=%d:r=%d:s=%dx%d' "$duration" "$fps" "$width" "$height")
-    frames=$(((duration * fps) - 1))
     log_level=info
+
+    case "$effect_behavior" in
+        overlay=*)
+            # overlay frame count is zero based
+            frames=$(((duration * fps) - 1))
+            ;;
+        *)
+            frames=$((duration * fps))
+            ;;
+    esac
 
     if [ "$quiet" = 1 ]; then
         log_level=error
     fi
 
-    # shellcheck disable=SC2059
-    parsed_easing_function=$(printf -- "$easing_function" "$frames")
+    variable_frames=$(variable 'frames' "$frames")
 
-    # shellcheck disable=SC2059
-    filter=$(printf -- "$effect_behavior" "$parsed_easing_function")
+    parsed_easing_function=$(
+        printf '%s' "$easing_function" |
+        sed 's/\//\\\//g' |
+        sed "$variable_frames"
+    )
+
+    variable_duration=$(variable 'duration' "$duration")
+    variable_ease=$(variable 'ease' "$parsed_easing_function")
+    variable_fps=$(variable 'fps' "$fps")
+    variable_height=$(variable 'height' "$height")
+    variable_width=$(variable 'width' "$width")
+    variable_zoom=$(variable 'zoom' "$zoom")
+
+    filter=$(
+        printf '%s' "$effect_behavior" |
+        sed 's/\//\\\//g' |
+        sed "$variable_duration" |
+        sed "$variable_ease" |
+        sed "$variable_fps" |
+        sed "$variable_frames" |
+        sed "$variable_width" |
+        sed "$variable_height" |
+        sed "$variable_zoom"
+    )
 
     if [ "$debug" = 1 ]; then
         digits=$(printf '%d' "$frames" | wc -c | tr -d ' ')
 
-        variable_digits=$(printf 's/{{digits}}/%s/g' "$digits")
-        variable_easing_name=$(printf 's/{{easing_name}}/%s/g' "$easing_name")
-        variable_effect_name=$(printf 's/{{effect_name}}/%s/g' "$effect_name")
-        variable_frames=$(printf 's/{{frames}}/%s/g' "$frames")
+        variable_digits=$(variable 'digits' "$digits")
+        variable_easing_name=$(variable 'easing_name' "$easing_name")
+        variable_effect_name=$(variable 'effect_name' "$effect_name")
+
+        case "$effect_behavior" in
+            zoompan=*)
+                # correct frame count for zoompan
+                variable_frames=$(variable 'frames' "$((frames - 1))")
+                ;;
+        esac
 
         debug_text=$(
             sed "$variable_digits" < "$CONFIG/debug.txt" |
@@ -81,24 +118,37 @@ generate() {
         filter=$(printf "%s,drawtext=x=40:y=40:font=monospace:fontcolor=#ECF0F1:fontsize=40:line_spacing=20:text='%s'" "$filter" "$debug_text")
     fi
 
-    ffmpeg \
-        -hide_banner \
-        -loglevel "$log_level" \
-        -f lavfi -i "$base" \
-        -i "$image" \
-        -filter_complex "$filter" \
-        -y \
-        "$video"
+    case "$effect_behavior" in
+        overlay=*)
+            ffmpeg \
+                -hide_banner \
+                -loglevel "$log_level" \
+                -f lavfi -i "$base" \
+                -i "$image" \
+                -filter_complex "$filter" \
+                -y \
+                "$video"
+            ;;
+        *)
+            ffmpeg \
+                -hide_banner \
+                -loglevel "$log_level" \
+                -i "$image" \
+                -filter_complex "$filter" \
+                -y \
+                "$video"
+            ;;
+    esac
 }
 
 help() {
     effect_list=$(effect_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
     easing_list=$(easing_names | xargs -I '{}' printf '%4s%s\\n' ' ' '{}')
 
-    variable_name=$(printf 's/{{name}}/%s/g' "$(get_package_field 'name')")
-    variable_description=$(printf 's/{{description}}/%s/g' "$(get_package_field 'description')")
-    variable_effects=$(printf 's/{{effects}}/%s/g' "${effect_list%%\\n}")
-    variable_easings=$(printf 's/{{easings}}/%s/g' "${easing_list%%\\n}")
+    variable_name=$(variable 'name' "$(get_package_field 'name')")
+    variable_description=$(variable 'description' "$(get_package_field 'description')")
+    variable_effects=$(variable 'effects' "${effect_list%%\\n}")
+    variable_easings=$(variable 'easings' "${easing_list%%\\n}")
 
     printf '\n'
 
@@ -111,6 +161,13 @@ help() {
     done
 
     printf '\n'
+}
+
+variable() {
+    key=$1
+    value=$2
+
+    printf 's/{{%s}}/%s/g' "$key" "$value"
 }
 
 version() {
@@ -135,6 +192,7 @@ main() {
     quiet=0
     width=
     height=
+    zoom=
 
     option_index=1
     option_name=
@@ -200,6 +258,9 @@ main() {
             --height)
                 height=$option_value
                 ;;
+            --zoom)
+                zoom=$option_value
+                ;;
             *)
                 error 'unkown option "%s"' "$option_name"
                 return 1
@@ -209,14 +270,15 @@ main() {
         option_index=$((option_index + 1))
     done
 
-    validate_numeric 'duration' "$duration"
+    validate_int 'duration' "$duration"
     validate_enum 'effect' "$effect_name" "$(effect_names)"
     validate_enum 'ease' "$easing_name" "$(easing_names)"
-    validate_numeric 'fps' "$fps"
+    validate_int 'fps' "$fps"
     validate_required 'image' "$image"
     validate_required 'video' "$video"
-    validate_numeric 'width' "$width"
-    validate_numeric 'height' "$height"
+    validate_int 'width' "$width"
+    validate_int 'height' "$height"
+    validate_float 'zoom' "$zoom"
 
     effect_behavior=$(get_effect_behavior "$effect_name")
     easing_function=$(get_easing_function "$easing_name")
@@ -233,7 +295,8 @@ main() {
         "$video" \
         "$quiet" \
         "$width" \
-        "$height"
+        "$height" \
+        "$zoom"
 }
 
 main "$@"

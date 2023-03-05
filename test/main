@@ -40,7 +40,8 @@ generate() {
         --video "$VIDEOS/$effect_name.mp4" \
         --quiet \
         --width 1080 \
-        --height 1920 &&
+        --height 1920 \
+        --zoom 3.0740740741 &&
         icon='✔' ||
         icon='✖'
 

@@ -16,7 +16,21 @@ validate_enum() {
     return 1
 }
 
-validate_numeric() {
+validate_float() {
+    name=$1
+    value=$2
+
+    validate_required "$name" "$value" || return 1
+
+    if echo "$value" | grep -q '^[0-9.]\+$'; then
+        return 0
+    fi
+
+    error "option "'"'"$name"'"'" has invalid floating point number: "'"'"$value"'"'
+    return 1
+}
+
+validate_int() {
     name=$1
     value=$2
 
@@ -26,7 +40,7 @@ validate_numeric() {
         return 0
     fi
 
-    error "option "'"'"$name"'"'" has invalid value: "'"'"$value"'"'
+    error "option "'"'"$name"'"'" has invalid integer number: "'"'"$value"'"'
     return 1
 }
 
