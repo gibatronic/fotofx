@@ -278,7 +278,12 @@ main() {
     validate_required 'video' "$video"
     validate_int 'width' "$width"
     validate_int 'height' "$height"
-    validate_float 'zoom' "$zoom"
+
+    case "$effect_name" in
+        'zoom-in'|'zoom-out')
+            validate_float 'zoom' "$zoom"
+            ;;
+    esac
 
     effect_behavior=$(get_effect_behavior "$effect_name")
     easing_function=$(get_easing_function "$easing_name")
